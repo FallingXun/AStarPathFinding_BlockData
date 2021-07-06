@@ -60,34 +60,87 @@ namespace Pathfinding {
 		/// </summary>
 		public System.Func<IWorkItemContext, bool, bool> updateWithContext;
 
-		public AstarWorkItem (System.Func<bool, bool> update) {
-			this.init = null;
-			this.initWithContext = null;
-			this.updateWithContext = null;
-			this.update = update;
-		}
+		        public GraphNodeData nodeData;
 
-		public AstarWorkItem (System.Func<IWorkItemContext, bool, bool> update) {
-			this.init = null;
-			this.initWithContext = null;
-			this.updateWithContext = update;
-			this.update = null;
-		}
+        public System.Action<GraphNodeData> initWithGraphNodeData;
 
-		public AstarWorkItem (System.Action init, System.Func<bool, bool> update = null) {
-			this.init = init;
-			this.initWithContext = null;
-			this.update = update;
-			this.updateWithContext = null;
-		}
+        public AstarWorkItem(System.Func<bool, bool> update)
+        {
+            this.init = null;
+            this.initWithContext = null;
+            this.updateWithContext = null;
+            this.update = update;
 
-		public AstarWorkItem (System.Action<IWorkItemContext> init, System.Func<IWorkItemContext, bool, bool> update = null) {
-			this.init = null;
-			this.initWithContext = init;
-			this.update = null;
-			this.updateWithContext = update;
-		}
-	}
+            this.initWithGraphNodeData = null;
+            this.nodeData = new GraphNodeData();
+        }
+
+        public AstarWorkItem(System.Func<IWorkItemContext, bool, bool> update)
+        {
+            this.init = null;
+            this.initWithContext = null;
+            this.updateWithContext = update;
+            this.update = null;
+
+            this.initWithGraphNodeData = null;
+            this.nodeData = new GraphNodeData();
+        }
+
+        public AstarWorkItem(System.Action init, System.Func<bool, bool> update = null)
+        {
+            this.init = init;
+            this.initWithContext = null;
+            this.update = update;
+            this.updateWithContext = null;
+
+            this.initWithGraphNodeData = null;
+            this.nodeData = new GraphNodeData();
+        }
+
+        public AstarWorkItem(System.Action<IWorkItemContext> init, System.Func<IWorkItemContext, bool, bool> update = null)
+        {
+            this.init = null;
+            this.initWithContext = init;
+            this.update = null;
+            this.updateWithContext = update;
+
+            this.initWithGraphNodeData = null;
+            this.nodeData = new GraphNodeData();
+        }
+
+        public AstarWorkItem(System.Action<GraphNodeData> init, GraphNodeData nodeData)
+        {
+            this.init = null;
+            this.initWithContext = null;
+            this.update = null;
+            this.updateWithContext = null;
+
+            this.initWithGraphNodeData = init;
+            this.nodeData = nodeData;
+        }
+    }
+
+
+    public struct GraphNodeData
+    {
+        public bool[] block;
+        public int pos_x;
+        public int pos_z;
+        public int width;
+        public int depth;
+        public bool walkable;
+
+        public GraphNodeData(bool[] block = null, int pos_x = -1, int pos_z = -1, int width = 0, int depth = 0, bool walkable = false)
+        {
+            this.block = block;
+            this.pos_x = pos_x;
+            this.pos_z = pos_z;
+            this.width = width;
+            this.depth = depth;
+            this.walkable = walkable;
+        }
+
+    }
 
 	/// <summary>Interface to expose a subset of the WorkItemProcessor functionality</summary>
 	public interface IWorkItemContext {
@@ -290,8 +343,14 @@ namespace Pathfinding {
 						itm.initWithContext = null;
 					}
 
-					// Make sure the item in the queue is up to date
-					workItems[0] = itm;
+                    if (itm.initWithGraphNodeData != null)
+                    {
+                        itm.initWithGraphNodeData(itm.nodeData);
+                        itm.initWithGraphNodeData = null;
+                    }
+
+                    // Make sure the item in the queue is up to date
+                    workItems[0] = itm;
 
 					if (itm.update != null) {
 						status = itm.update(force);
